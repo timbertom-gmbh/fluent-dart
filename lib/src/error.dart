@@ -1,11 +1,14 @@
-class SyntaxError extends Error {
+import 'package:fluent/src/parser.dart';
+
+class SyntaxErrorException implements Exception {
   final String message;
-  SyntaxError(this.message);
-  String toString() => "Syntax error: $message";
+  final SourcePosition position;
+  SyntaxErrorException(this.message, this.position);
+  String toString() => "Syntax error: $message (at ${position.filename}: Ln ${position.line}, Col ${position.column})";
 }
 
-class ReferenceError extends Error {
+class RuntimeException implements Exception {
   final String message;
-  ReferenceError(this.message);
+  RuntimeException(this.message);
   String toString() => "Reference error: $message";
 }

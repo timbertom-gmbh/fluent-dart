@@ -4,6 +4,8 @@ import 'dart:math';
 import 'ast.dart';
 import 'error.dart';
 
+typedef SourcePosition = ({String filename, int line, int column});
+
 class FluentParser {
   // This regex is used to iterate through the beginnings of messages and terms.
   // With the multiLine flag, the ^ matches at the beginning of every line.
@@ -97,8 +99,23 @@ class FluentParser {
   );
 
   String source;
+  String filename;
   int cursor = 0;
-  FluentParser(this.source);
+  FluentParser(this.source, this.filename);
+
+  SourcePosition _getCurrentPosition() {
+    int line = 1;
+    int column = 1;
+    for (int i = 0; i < cursor; i++) {
+      if (source[i] == "\n") {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+    }
+    return (filename: filename, line: line, column: column);
+  }
 
   Resource parse() {
     cursor = 0;
@@ -117,7 +134,7 @@ class FluentParser {
     final value = parsePattern();
     final attributes = parseAttributes();
     if (value == null && attributes.length == 0) {
-      throw SyntaxError("Expected message value or attributes");
+      throw SyntaxErrorException("Expected message value or attributes", _getCurrentPosition());
     }
     return Message(id, value, attributes);
   }
@@ -128,7 +145,7 @@ class FluentParser {
       String name = match1(reAttributeStart);
       Pattern? value = parsePattern();
       if (value == null) {
-        throw SyntaxError("Expected attribute value");
+        throw SyntaxErrorException("Expected attribute value", _getCurrentPosition());
       }
       attrs[name] = value;
     }
@@ -186,7 +203,7 @@ class FluentParser {
       }
 
       if (currentChar() == "}") {
-        throw SyntaxError("Unbalanced closing brace");
+        throw SyntaxErrorException("Unbalanced closing brace", _getCurrentPosition());
       }
 
       final indent = parseIndent();
@@ -232,7 +249,7 @@ class FluentParser {
       consumeToken(tokenBraceClose, true);
       return SelectExpression(selector, variants);
     }
-    throw SyntaxError("Unclosed placeable");
+    throw SyntaxErrorException("Unclosed placeable", _getCurrentPosition());
   }
 
   Expression parseInlineExpression() {
@@ -261,7 +278,7 @@ class FluentParser {
           return FunctionReference(name, args);
         }
 
-        throw SyntaxError("Function names must be all upper-case");
+        throw SyntaxErrorException("Function names must be all upper-case", _getCurrentPosition());
       }
 
       if (sigil == "-") {
@@ -279,7 +296,7 @@ class FluentParser {
     List<Argument> args = [];
     while (true) {
       if (currentChar() == null) {
-        throw SyntaxError("Unclosed argument list");
+        throw SyntaxErrorException("Unclosed argument list", _getCurrentPosition());
       }
       // End of the argument list.
       else if (currentChar() == ")") {
@@ -318,12 +335,12 @@ class FluentParser {
       final key = parseVariantKey();
       final value = parsePattern();
       if (value == null) {
-        throw SyntaxError("Expected variant value");
+        throw SyntaxErrorException("Expected variant value", _getCurrentPosition());
       }
       variants.add(Variant(key, value, isDefault));
     }
     if (!hasStar) {
-      throw SyntaxError("Expected default variant");
+      throw SyntaxErrorException("Expected default variant", _getCurrentPosition());
     }
     return variants;
   }
@@ -350,7 +367,7 @@ class FluentParser {
       return parseStringLiteral();
     }
 
-    throw SyntaxError("Invalid expression");
+    throw SyntaxErrorException("Invalid expression", _getCurrentPosition());
   }
 
   NumberLiteral parseNumberLiteral() {
@@ -371,7 +388,7 @@ class FluentParser {
 
       if (currentChar() == null) {
         // We've reached an EOL of EOF.
-        throw SyntaxError("Unclosed string literal");
+        throw SyntaxErrorException("Unclosed string literal", _getCurrentPosition());
       }
       if (currentChar() == "\\") {
         sb.write(parseEscapeSequence());
@@ -401,7 +418,7 @@ class FluentParser {
           : "�";
     }
 
-    throw SyntaxError("Unknown escape sequence");
+    throw SyntaxErrorException("Unknown escape sequence", _getCurrentPosition());
   }
 
   // Parse blank space. Return it if it looks like indent before a pattern
@@ -465,7 +482,7 @@ class FluentParser {
   Match match(RegExp re) {
     Match? result = re.matchAsPrefix(source, cursor);
     if (result == null) {
-      throw SyntaxError("Expected $re");
+      throw SyntaxErrorException("Expected $re", _getCurrentPosition());
     }
     cursor = result.end;
     return result;
@@ -483,7 +500,7 @@ class FluentParser {
       return true;
     }
     if (raiseError) {
-      throw SyntaxError("Expected $char");
+      throw SyntaxErrorException("Expected $char", _getCurrentPosition());
     }
     return false;
   }
@@ -497,7 +514,7 @@ class FluentParser {
       return true;
     }
     if (raiseError) {
-      throw SyntaxError("Expected $re");
+      throw SyntaxErrorException("Expected $re", _getCurrentPosition());
     }
     return false;
   }

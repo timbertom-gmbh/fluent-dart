@@ -18,7 +18,7 @@ const PDI = "\u2069";
 // Resolve a pattern (a complex string with placeables).
 FluentValue resolvePattern(Scope scope, Pattern pattern) {
   if (scope.dirty.contains(pattern)) {
-    scope.reportError(new RangeError("Cyclic reference"));
+    scope.reportError(new RuntimeException("Cyclic reference"));
     return FluentNone();
   }
 
@@ -104,7 +104,7 @@ FluentValue resolveVariableReference(Scope scope, VariableReference reference) {
     // variables references produce ReferenceErrors.
     arg = scope.args[reference.name];
   } else {
-    scope.reportError(ReferenceError("Unknown variable: ${reference.name}"));
+    scope.reportError(RuntimeException("Unknown variable: ${reference.name}"));
     return FluentNone("\$${reference.name}");
   }
 
@@ -123,7 +123,7 @@ FluentValue resolveVariableReference(Scope scope, VariableReference reference) {
   } else if (arg is DateTime) {
     return FluentDateTime(arg, locale: scope.bundle.locale);
   } else {
-    scope.reportError(UnsupportedError(
+    scope.reportError(RuntimeException(
         "Variable type not supported: ${reference.name}, ${arg.runtimeType}"));
     return FluentNone("\$${reference.name}");
   }
@@ -135,7 +135,7 @@ FluentValue resolveMessageReference(Scope scope, MessageReference reference) {
   String? attr = reference.attr;
   final message = scope.bundle.messages[name];
   if (message == null) {
-    scope.reportError(ReferenceError("Unknown message: $name"));
+    scope.reportError(RuntimeException("Unknown message: $name"));
     return FluentNone(name);
   }
   if (attr != null) {
@@ -143,14 +143,14 @@ FluentValue resolveMessageReference(Scope scope, MessageReference reference) {
     if (attribute != null) {
       return resolvePattern(scope, attribute);
     }
-    scope.reportError(ReferenceError("Unknown attribute: $attr"));
+    scope.reportError(RuntimeException("Unknown attribute: $attr"));
     return FluentNone("$name.$attr");
   }
   if (message.value != null) {
     return resolvePattern(scope, message.value!);
   }
 
-  scope.reportError(ReferenceError("No value: $name"));
+  scope.reportError(RuntimeException("No value: $name"));
   return FluentNone(name);
 }
 
@@ -161,7 +161,7 @@ FluentValue resolveTermReference(Scope scope, TermReference reference) {
   List<Argument> args = reference.arguments;
   final term = scope.bundle.messages[name];
   if (term == null) {
-    scope.reportError(ReferenceError("Unknown term: $name"));
+    scope.reportError(RuntimeException("Unknown term: $name"));
     return FluentNone(name);
   }
   if (attr != null) {
@@ -173,7 +173,7 @@ FluentValue resolveTermReference(Scope scope, TermReference reference) {
       scope.params = null;
       return resolved;
     }
-    scope.reportError(ReferenceError("Unknown attribute: $attr"));
+    scope.reportError(RuntimeException("Unknown attribute: $attr"));
     return FluentNone("$name.$attr");
   }
 
@@ -189,14 +189,14 @@ FluentValue resolveFunctionReference(Scope scope, FunctionReference reference) {
   var args = reference.arguments;
   Function? func = scope.bundle.functions[name];
   if (func == null) {
-    scope.reportError(ReferenceError("Unknown function: $name()"));
+    scope.reportError(RuntimeException("Unknown function: $name()"));
     return FluentNone("$name()");
   }
 
   try {
     final resolved = getArguments(scope, args);
     return Function.apply(func, resolved.positional, resolved.named);
-  } on Error catch (err) {
+  } on Exception catch (err) {
     scope.reportError(err);
     return FluentNone("$name()");
   }
@@ -285,7 +285,7 @@ FluentValue getDefault(Scope scope, List<Variant> variants) {
     }
   }
 
-  scope.reportError(RangeError("No default"));
+  scope.reportError(RuntimeException("No default"));
   return FluentNone();
 }
 

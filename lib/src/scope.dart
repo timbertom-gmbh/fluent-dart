@@ -5,7 +5,7 @@ class Scope {
   // The bundle for which the given resolution is happening.
   final FluentBundle bundle;
   // The list of errors collected while resolving.
-  final List<Error>? errors;
+  final List<Exception>? errors;
   // A dict of developer-provided variables.
   final Map<String, dynamic> args;
 
@@ -21,7 +21,7 @@ class Scope {
 
   Scope(this.bundle, this.args, this.errors, [this.params]);
 
-  void reportError(Error error) {
+  void reportError(Exception error) {
     if (this.errors == null) {
       throw error;
     } else {

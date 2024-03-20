@@ -26,8 +26,8 @@ class FluentBundle {
   FluentBundle(this.locale,
       {this.useIsolating = false, this.transform = identity});
 
-  void addMessages(String source) {
-    FluentParser parser = FluentParser(source);
+  void addMessages(String source, [String filename = '<unknown>']) {
+    FluentParser parser = FluentParser(source, filename);
     Resource resource = parser.parse();
     for (Message message in resource.body) {
       messages[message.id] = message;
@@ -40,7 +40,7 @@ class FluentBundle {
   }
 
   String? format(String id,
-      {Map<String, dynamic> args = const {}, List<Error>? errors, String? attribute}) {
+      {Map<String, dynamic> args = const {}, List<Exception>? errors, String? attribute}) {
     Message? message = this.messages[id];
     if (message == null) {
       return null;
@@ -62,7 +62,7 @@ class FluentBundle {
     try {
       FluentValue value = resolvePattern(scope, pattern);
       return value.toString();
-    } on Error catch (err) {
+    } on Exception catch (err) {
       if (errors != null) {
         errors.add(err);
         return null;
