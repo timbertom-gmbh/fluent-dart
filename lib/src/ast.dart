@@ -80,7 +80,7 @@ class PositionalArgument extends Argument {
 
 class NamedArgument extends Argument {
   final String name;
-  final Literal value;
+  final Expression value;
   NamedArgument(this.name, this.value);
 }
 

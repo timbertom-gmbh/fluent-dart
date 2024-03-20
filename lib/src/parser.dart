@@ -307,7 +307,7 @@ class FluentParser {
     if (expr is MessageReference) {
       if (consumeToken(tokenColon)) {
         // The reference is the beginning of a named argument.
-        final value = parseLiteral();
+        final value = parseInlineExpression();
         return NamedArgument(expr.name, value);
       }
 
