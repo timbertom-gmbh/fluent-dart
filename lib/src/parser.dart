@@ -108,16 +108,7 @@ class FluentParser {
     for (RegExpMatch match in reMessageStart.allMatches(source)) {
       String id = match.group(1)!;
       cursor = match.end;
-      try {
-        resource.body.add(parseMessage(id));
-      } on SyntaxError catch (e) {
-        // Don't report any Fluent syntax errors. Skip directly to the
-        // beginning of the next message or term.
-        print(e);
-        continue;
-      } catch (err, _) {
-        throw err;
-      }
+      resource.body.add(parseMessage(id));
     }
     return resource;
   }
